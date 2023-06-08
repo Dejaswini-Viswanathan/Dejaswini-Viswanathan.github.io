@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Management Page</title>
+    <style>
+
+	body{
+	font-family: 'Times New Roman', Times, serif, sans-serif;
+            background-image: url("softybg.jpeg");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            background-attachment: fixed;
+}
+	h1 {
+	text-align: center;
+	color: purple;
+}
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>!!! WELCOME TO ANNA LIBRARY WEBPAGE !!!</h1>
+
+    <label for="filterTitle">Filter by Title:</label>
+    <input type="text" id="filterTitleInput" oninput="filterBooks()">
+
+    <label for="filterAuthor">Filter by Author:</label>
+    <input type="text" id="filterAuthorInput" oninput="filterBooks()">
+
+    <label for="filterSubject">Filter by Subject:</label>
+    <input type="text" id="filterSubjectInput" oninput="filterBooks()">
+
+    <label for="filterDate">Filter by Publish Date:</label>
+    <input type="date" id="filterDateInput" oninput="filterBooks()">
+    <div id="authorCountContainer"></div>
+    <table id="bookTable">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>Subject</th>
+                <th>Publish Date</th>
+            </tr>
+        </thead>
+        <tbody id="bookList">
+            <!-- Book entries will be dynamically added here -->
+        </tbody>
+    </table>
+
+    <div id="pagination"></div>
+    <div id="bookCountByAuthor"></div>
+
+    <div id="bookCount">
+        <p id="titleCount"></p>
+        <p id="authorCount"></p>
+        <p id="subjectCount"></p>
+        <p id="publishDateCount"></p>
+    </div>
+
+    <script>
+        var books = []; // Array to store book data
+        var currentPage = 1;
+        var booksPerPage = 10;
+
+        // Function to generate book rows for the current page
+        function generateBookRows() {
+            var bookList = document.getElementById("bookList");
+            bookList.innerHTML = ""; // Clear existing entries
+
+            var startIndex = (currentPage - 1) * booksPerPage;
+            var endIndex = startIndex + booksPerPage;
+            var currentBooks = books.slice(startIndex, endIndex);
+
+            for (var i = 0; i < currentBooks.length; i++) {
+                var book = currentBooks[i];
+
+                var row = document.createElement("tr");
+
+                var titleCell = document.createElement("td");
+                titleCell.textContent = book.title;
+                row.appendChild(titleCell);
+
+                var authorCell = document.createElement("td");
+                authorCell.textContent = book.author;
+                row.appendChild(authorCell);
+
+                var subjectCell = document.createElement("td");
+                subjectCell.textContent = book.subject;
+                row.appendChild(subjectCell);
+
+                var publishDateCell = document.createElement("td");
+                publishDateCell.textContent = book.publishDate;
+                row.appendChild(publishDateCell);
+
+                bookList.appendChild(row);
+            }
+        }
+
+        // Function to filter the books based on input values
+        function filterBooks() {
+    var filterTitleInput = document.getElementById("filterTitleInput").value.toLowerCase();
+    var filterAuthorInput = document.getElementById("filterAuthorInput").value.toLowerCase();
+    var filterSubjectInput = document.getElementById("filterSubjectInput").value.toLowerCase();
+    var filterDateInput = document.getElementById("filterDateInput").value;
+
+    var filteredBooks = books.filter(function(book) {
+        var matchTitle = book.title.toLowerCase().includes(filterTitleInput);
+        var matchAuthor = book.author.toLowerCase().includes(filterAuthorInput);
+        var matchSubject = book.subject.toLowerCase().includes(filterSubjectInput);
+        var matchDate = book.publishDate === filterDateInput;
+
+        return matchTitle && matchAuthor && matchSubject && matchDate;
+    });
+
+    currentPage = 1; // Reset to the first page after filtering
+    renderPagination(filteredBooks.length);
+    generateBookRows();
+
+    if (filterAuthorInput !== "") {
+        var filteredByAuthorBooks = filteredBooks.filter(function(book) {
+            return book.author.toLowerCase() === filterAuthorInput;
+        });
+
+        updateBookCount(filteredByAuthorBooks);
+    } else {
+        updateBookCount(filteredBooks);
+    }
+
+    updateBookCountByAuthor();
+}
+
+	//Function to update book count by the authors
+	function updateBookCountByAuthor() {
+    var bookCounts = {};
+    for (var i = 0; i < books.length; i++) {
+        var author = books[i].author;
+        if (bookCounts[author]) {
+            bookCounts[author]++;
+        } else {
+            bookCounts[author] = 1;
+        }
+    }
+
+    var bookCountContainer = document.getElementById("bookCountByAuthor");
+    bookCountContainer.innerHTML = "";
+
+    for (var author in bookCounts) {
+        var count = bookCounts[author];
+
+        var countElement = document.createElement("div");
+        countElement.textContent = author + " : " + count;
+
+        bookCountContainer.appendChild(countElement);
+    }
+}
+
+        // Function to render pagination links
+        function renderPagination(totalBooks) {
+            var totalPages = Math.ceil(totalBooks / booksPerPage);
+            var paginationContainer = document.getElementById("pagination");
+            paginationContainer.innerHTML = "";
+
+            for (var i = 1; i <= totalPages; i++) {
+                var pageLink = document.createElement("a");
+                pageLink.href = "#";
+                pageLink.textContent = i;
+
+                if (i === currentPage) {
+                    pageLink.classList.add("active");
+                }
+
+                pageLink.addEventListener("click", function(event) {
+                    event.preventDefault();
+                    currentPage = parseInt(this.textContent);
+                    generateBookRows();
+                    renderPagination(filteredBooks.length);
+		updateBookCountByAuthor();
+
+                });
+
+                paginationContainer.appendChild(pageLink);
+            }
+        }
+
+        // Function to update the book count for each criteria
+        function updateBookCount(filteredBooks) {
+    var authorCountContainer = document.getElementById("authorCountContainer");
+    authorCountContainer.innerHTML = "";
+
+    var authors = {};
+
+    filteredBooks.forEach(function(book) {
+        var author = book.author;
+        if (authors.hasOwnProperty(author)) {
+            authors[author]++;
+        } else {
+            authors[author] = 1;
+        }
+    });
+
+    for (var author in authors) {
+        var count = authors[author];
+        var authorCount = document.createElement("p");
+        authorCount.textContent = author + ": " + count;
+        authorCountContainer.appendChild(authorCount);
+    }
+}
+
+        // Simulated book data
+        books = [
+            { title: "Harry Potter and the Sorcerer's stone", author: "J.K.Rowling", subject: "Storybook", publishDate: "2023-01-01" },
+            { title: "Quantitative Aptitude", author: "R.S.Agarwal", subject: "Studies", publishDate: "2022-06-01" },
+            { title: "Harry Potter and the Deathly Hallows", author: "J.K.Rowling", subject: "Storybook", publishDate: "2023-01-01" },
+            { title: "GK for UPSC", author: "Lakshman", subject: "UPSC", publishDate: "2022-06-01" },
+            { title: "Harry Potter and the Chamber of Secrets", author: "J.K.Rowling", subject: "Storybook", publishDate: "2022-12-01" },
+            { title: "Objective General English", author: "R.S.Agarwal", subject: "Studies", publishDate: "2023-01-01" },
+            { title: "24 Years Question Bank", author: "Lakshman", subject: "UPSC", publishDate: "2022-12-01" },
+            { title: "The Casual Vacancy", author: "J.K.Rowling", subject: "Storybook", publishDate: "2022-06-01" },
+            { title: "Modern Approach to Verbal Reasoning", author: "R.S.Agarwal", subject: "Studies", publishDate: "2022-12-01" },
+            { title: "NCERT MCQ on History", author: "Lakshman", subject: "UPSC", publishDate: "2023-01-01" },
+            { title: "The Ickabog", author: "J.K.Rowling", subject: "Storybook", publishDate: "2022-06-01" },
+            { title: "Mental Ability", author: "R.S.Agarwal", subject: "Studies", publishDate: "2022-12-01" },
+            { title: "Mock Exam Sets", author: "Lakshman", subject: "UPSC", publishDate: "2023-01-01" },
+            { title: "The Christmas Pig", author: "J.K.Rowling", subject: "Storybook", publishDate: "2022-06-01" },
+            { title: "GATE Preparation", author: "R.S.Agarwal", subject: "Studies", publishDate: "2022-12-01" }
+        ];
+
+        renderPagination(books.length);
+        generateBookRows();
+        updateBookCount(books);
+    </script>
+</body>
+</html>
